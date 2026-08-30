@@ -1,6 +1,5 @@
 import Navbar from "@/components/Navbar";
 
-
 import AboutPreview from "@/components/AboutPreview";
 import Skills from "@/components/Skills";
 import ContactPreview from "@/components/ContactPreview";
@@ -15,15 +14,15 @@ export default function Home() {
       <Navbar />
 
       <main>
-        {/* Portfolio information loaded from Firestore */}
-        <PortfolioHero/>
+        <PortfolioHero />
 
-        {/* Projects loaded from Firestore */}
         <Projects />
 
         <AboutPreview />
         <Skills />
         <ContactPreview />
+
+        {/* Feedback loaded from Firestore */}
         <FeedbackSection />
       </main>
 

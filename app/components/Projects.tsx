@@ -47,12 +47,6 @@ export default function Projects() {
 
   const [error, setError] = useState("");
 
-  /*
-   * We start at the first real project.
-   *
-   * The carousel adds cloned projects before and after
-   * the real projects so the carousel can loop smoothly.
-   */
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const [selectedProject, setSelectedProject] =
@@ -112,11 +106,20 @@ export default function Projects() {
         setProjects(projectList);
 
         /*
-         * Start from the first REAL project.
+         * Start from first REAL project.
+         *
+         * 3+ projects:
+         * [last 3] [REAL PROJECTS] [first 3]
+         *
+         * Therefore first real project = index 3.
          */
-        setCurrentIndex(
-          projectList.length >= 3 ? 3 : 1
-        );
+        if (projectList.length >= 3) {
+          setCurrentIndex(3);
+        } else if (projectList.length === 2) {
+          setCurrentIndex(2);
+        } else {
+          setCurrentIndex(0);
+        }
       } catch (err) {
         console.error(
           "Error loading projects:",
@@ -135,13 +138,7 @@ export default function Projects() {
   }, []);
 
   /* =======================================================
-     NUMBER OF VISIBLE PROJECTS
-     
-     MOBILE  = 1
-     DESKTOP = 3
-     
-     CSS controls actual visibility.
-     We use 3 clones for safe desktop looping.
+     CAROUSEL PROJECTS
   ======================================================= */
 
   const carouselProjects = useMemo(() => {
@@ -150,19 +147,18 @@ export default function Projects() {
     }
 
     /*
-     * For 3 or more projects:
+     * 3 OR MORE PROJECTS
      *
      * [last3] [all projects] [first3]
      *
      * Example:
      *
-     * A B C | A B C D E | A B C
+     * C D E | A B C D E | A B C
      */
     if (projects.length >= 3) {
       const firstThree = projects.slice(0, 3);
 
-      const lastThree =
-        projects.slice(-3);
+      const lastThree = projects.slice(-3);
 
       return [
         ...lastThree,
@@ -172,9 +168,9 @@ export default function Projects() {
     }
 
     /*
-     * For 2 projects:
+     * 2 PROJECTS
      *
-     * [last2] [A B] [first2]
+     * [A B] [A B] [A B]
      */
     if (projects.length === 2) {
       return [
@@ -185,15 +181,13 @@ export default function Projects() {
     }
 
     /*
-     * One project.
+     * 1 PROJECT
      */
     return projects;
   }, [projects]);
 
   /* =======================================================
      REAL PROJECT INDEX
-     
-     Used for dots.
   ======================================================= */
 
   const realProjectIndex = useMemo(() => {
@@ -206,7 +200,9 @@ export default function Projects() {
     }
 
     const offset =
-      projects.length >= 3 ? 3 : projects.length;
+      projects.length >= 3
+        ? 3
+        : projects.length;
 
     const index =
       currentIndex - offset;
@@ -216,7 +212,10 @@ export default function Projects() {
         projects.length) %
       projects.length
     );
-  }, [currentIndex, projects.length]);
+  }, [
+    currentIndex,
+    projects.length,
+  ]);
 
   /* =======================================================
      NEXT PROJECT
@@ -266,14 +265,13 @@ export default function Projects() {
         ? 3
         : projects.length;
 
-    setCurrentIndex(offset + index);
+    setCurrentIndex(
+      offset + index
+    );
   };
 
   /* =======================================================
-     INFINITE LOOP RESET
-     
-     After reaching cloned projects,
-     instantly move back to the real project.
+     INFINITE LOOP
   ======================================================= */
 
   const handleTransitionEnd = () => {
@@ -281,18 +279,23 @@ export default function Projects() {
       return;
     }
 
-    /*
-     * 3+ projects
-     */
+    /* =====================================================
+       3+ PROJECTS
+    ===================================================== */
+
     if (projects.length >= 3) {
       /*
-       * We have:
+       * REAL:
        *
-       * [last3] [REAL] [first3]
+       * [last3] [A B C D E] [first3]
        *
-       * If we reach the first clones:
-       * reset to first real project.
+       * Real indexes:
+       * 3 4 5 6 7
+       *
+       * First clone starts at:
+       * projects.length + 3
        */
+
       if (
         currentIndex >=
         projects.length + 3
@@ -301,21 +304,19 @@ export default function Projects() {
 
         setCurrentIndex(3);
 
-        /*
-         * Turn animation back on
-         * after browser renders reset.
-         */
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
             setIsTransitioning(true);
           });
         });
+
+        return;
       }
 
       /*
-       * If we move backwards into the
-       * cloned projects at the beginning.
+       * Moving backwards into first clones.
        */
+
       if (currentIndex < 3) {
         setIsTransitioning(false);
 
@@ -328,15 +329,26 @@ export default function Projects() {
             setIsTransitioning(true);
           });
         });
+
+        return;
       }
 
       return;
     }
 
-    /*
-     * 2 projects
-     */
+    /* =====================================================
+       2 PROJECTS
+    ===================================================== */
+
     if (projects.length === 2) {
+      /*
+       * [A B] [A B] [A B]
+       *
+       * Real:
+       * index 2 = A
+       * index 3 = B
+       */
+
       if (currentIndex >= 4) {
         setIsTransitioning(false);
 
@@ -347,6 +359,8 @@ export default function Projects() {
             setIsTransitioning(true);
           });
         });
+
+        return;
       }
 
       if (currentIndex < 2) {
@@ -389,7 +403,7 @@ export default function Projects() {
   ]);
 
   /* =======================================================
-     ESC + KEYBOARD ARROWS
+     KEYBOARD
   ======================================================= */
 
   useEffect(() => {
@@ -397,8 +411,9 @@ export default function Projects() {
       event: KeyboardEvent
     ) {
       /*
-       * Close popup
+       * ESC closes popup
        */
+
       if (event.key === "Escape") {
         setSelectedProject(null);
         return;
@@ -407,6 +422,7 @@ export default function Projects() {
       /*
        * Don't move carousel while popup is open.
        */
+
       if (selectedProject) {
         return;
       }
@@ -437,7 +453,7 @@ export default function Projects() {
   ]);
 
   /* =======================================================
-     STOP BODY SCROLL WHEN POPUP IS OPEN
+     STOP BODY SCROLL WHEN POPUP OPEN
   ======================================================= */
 
   useEffect(() => {
@@ -809,10 +825,10 @@ export default function Projects() {
             >
               {/* =================================================
                   TRACK
-                  
+
                   MOBILE:
-                  1 CARD
-                  
+                  1 FULL CARD
+
                   DESKTOP:
                   3 CARDS
               ================================================= */}
@@ -828,17 +844,25 @@ export default function Projects() {
                       ? "transition-transform duration-700 ease-in-out"
                       : ""
                   }
+                  translate-x-[var(--mobile-x)]
+                  md:translate-x-[var(--desktop-x)]
                 `}
-                style={{
-                  transform: `translateX(-${
-                    projects.length >= 3
-                      ? currentIndex *
-                        (100 / 3)
-                      : projects.length === 2
-                      ? currentIndex * 50
-                      : 0
-                  }%)`,
-                }}
+                style={
+                  {
+                    "--mobile-x": `-${
+                      currentIndex * 100
+                    }%`,
+
+                    "--desktop-x": `-${
+                      projects.length >= 3
+                        ? currentIndex *
+                          (100 / 3)
+                        : projects.length === 2
+                        ? currentIndex * 50
+                        : 0
+                    }%`,
+                  } as React.CSSProperties
+                }
               >
                 {carouselProjects.map(
                   (project, index) => {
@@ -1067,6 +1091,7 @@ export default function Projects() {
                               <div
                                 className="
                                   mt-5
+                                  mb-6
                                   flex
                                   flex-wrap
                                   gap-2
@@ -1114,7 +1139,7 @@ export default function Projects() {
                                   gap-3
                                   border-t
                                   border-gray-100
-                                  pt-5
+                                  pt-6
                                   dark:border-gray-800
                                 "
                               >
@@ -1161,7 +1186,7 @@ export default function Projects() {
                                   </a>
                                 )}
 
-                                {/* LIVE */}
+                                {/* LIVE DEMO */}
 
                                 {project.liveUrl && (
                                   <a
@@ -1542,7 +1567,7 @@ export default function Projects() {
               )}
 
               {/* =================================================
-                  LINKS
+                  POPUP LINKS
               ================================================= */}
 
               {(
